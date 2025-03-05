@@ -121,10 +121,6 @@ class _LoginState extends State<Login> {
                           color: currentTheme.primaryColor,
                         ),
                       )),
-                  TextButton(
-                      onPressed: (){
-                        Provider.of<ThemeManager>(context, listen: false).toggleTheme();
-                      }, child: Text("Toggle Theme",style: currentTheme.textTheme.titleSmall,))
                 ],
               ),
             ) ),
