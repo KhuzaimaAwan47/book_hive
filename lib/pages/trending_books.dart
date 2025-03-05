@@ -1,7 +1,9 @@
 import 'package:bookhive/auth/database_helper.dart';
 import 'package:bookhive/models/books_model.dart';
+import 'package:bookhive/providers/favorites_provider.dart';
 import 'package:bookhive/services/api_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class TrendingBooksWidget extends StatelessWidget {
   const TrendingBooksWidget({super.key});
@@ -37,7 +39,8 @@ class TrendingBooksWidget extends StatelessWidget {
                 subtitle: Text(book.authors.join(', ',)),
                 trailing: IconButton(
                     onPressed: () async {
-                      await DatabaseHelper().insertFavorite(book);
+                      await Provider.of<FavoriteBooksProvider>(context, listen: false).addFavorite(book);
+                     // await DatabaseHelper().insertFavorite(book);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             backgroundColor: Colors.green,

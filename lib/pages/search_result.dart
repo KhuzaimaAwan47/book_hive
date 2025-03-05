@@ -1,7 +1,9 @@
 import 'package:bookhive/auth/database_helper.dart';
 import 'package:bookhive/models/books_model.dart';
+import 'package:bookhive/providers/favorites_provider.dart';
 import 'package:bookhive/services/api_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class Search extends StatelessWidget{
   final String query;
@@ -45,13 +47,13 @@ class Search extends StatelessWidget{
                   trailing: IconButton(
                     icon: const Icon(Icons.favorite_border),
                     onPressed: () async {
-                      await DatabaseHelper().insertFavorite(book);
+                      await Provider.of<FavoriteBooksProvider>(context, listen: false).addFavorite(book);
+                     // await DatabaseHelper().insertFavorite(book);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             backgroundColor: Colors.green,
                             behavior: SnackBarBehavior.floating, // Make it float
                             margin: EdgeInsets.only(bottom: 16.0, left: 16.0, right: 16.0),
-                            duration: Duration(seconds: 3),
                             content: Text('Book saved to favorites!')),
                       );
                     },

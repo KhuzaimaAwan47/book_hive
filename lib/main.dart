@@ -1,4 +1,5 @@
 import 'package:bookhive/auth/auth.dart';
+import 'package:bookhive/providers/favorites_provider.dart';
 import 'package:bookhive/theme/theme.dart';
 import 'package:bookhive/theme/theme_manager.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +14,13 @@ void main() async {
 
 
 
+
   runApp(
-    ChangeNotifierProvider.value(
-      value: themeManager,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: themeManager),
+        ChangeNotifierProvider<FavoriteBooksProvider>(create: (_) => FavoriteBooksProvider()),
+      ],
       child: MyApp(),
     ),
   );

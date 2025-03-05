@@ -8,7 +8,6 @@ class DatabaseHelper{
 
   //Tables
 
-  //Don't put a comma at the end of a column in sqlite
 
   String user = '''
    CREATE TABLE users (
@@ -30,7 +29,7 @@ class DatabaseHelper{
     )
   ''';
 
-  //Our connection is ready
+  //Create a connection to the database
   Future<Database> initDB ()async{
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, databaseName);
@@ -41,7 +40,7 @@ class DatabaseHelper{
     });
   }
 
-  //Function methods
+  //Function
 
   //Authentication
   Future<bool> authenticate(Users usr)async{
