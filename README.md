@@ -24,7 +24,7 @@ A Flutter app to search for books using the Google Books API and save favorites 
     - sqflite: ^2.4.2
     - path_provider: ^2.1.5
 
-2. **Clone the repository**:
+3. **Clone the repository**:
    ```bash
    git clone https://github.com/KhuzaimaAwan47/book_hive.git
    cd book_hive
