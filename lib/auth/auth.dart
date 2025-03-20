@@ -2,9 +2,9 @@ import 'package:bookhive/auth/database_helper.dart';
 import 'package:bookhive/auth/validators.dart';
 import 'package:bookhive/models/user_model.dart';
 import 'package:bookhive/pages/home_page.dart';
+import 'package:bookhive/providers/favorites_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../theme/theme_manager.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -23,15 +23,45 @@ class _LoginState extends State<Login> {
   final TextEditingController passwordController = TextEditingController();
   final db = DatabaseHelper();
 
-  login()async{
-   // Users? usrDetails = await db.getUser(usrName.text);
-    var res = await db.authenticate(Users(usrName: userNameController.text, password: passwordController.text));
-    if(res == true){
-      //If result is correct then go to profile or home
-      if(!mounted)return;
-      Navigator.push(context, MaterialPageRoute(builder: (context)=> HomePage()));
-    }else{
-      //Otherwise show the error message
+  login() async {
+    var res = await db.authenticate(Users(
+      usrName: userNameController.text,
+      password: passwordController.text,
+    ));
+
+    if (res == true) {
+      // Get user data to retrieve usrId
+      Users? user = await DatabaseHelper().getUser(userNameController.text);
+
+      if (user != null) {
+        // Set user ID in favorites provider
+        Provider.of<FavoriteBooksProvider>(context, listen: false)
+            .setCurrentUserId(user.usrId!);
+
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage(usrName: user.usrName,)),
+        );
+      }
+    } else {
+      // Error handling
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
+          duration: Duration(seconds: 1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+          ),
+          content: Text(
+            'Invalid username or password',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
       setState(() {
         isLoginTrue = true;
       });
@@ -44,8 +74,22 @@ class _LoginState extends State<Login> {
 
     final currentTheme = Theme.of(context);
 
+    final textFillColor = Theme.of(context).brightness == Brightness.dark
+        ? Color(0xFF2B2B2B) // Dark theme fill color of text field
+        : Colors.blue.shade50; // Light theme fill color of text field
+    final textIconColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey.shade400 // Dark theme icon color of text field
+        : Colors.grey.shade800; // Light theme icon color of text field
+    final textFieldStyle = TextStyle(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.white // Dark theme text color of text field
+          : Colors.black, // Light theme text color of text field
+    );
+
+
 
     return Scaffold(
+      backgroundColor: currentTheme.brightness == Brightness.dark ? Colors.black : Colors.white,
       appBar: null,
       body: Center(
         child: Padding(padding: EdgeInsets.all(16.0),
@@ -54,36 +98,45 @@ class _LoginState extends State<Login> {
             child:SingleChildScrollView(
               child: Column(
                 children: [
-                  SizedBox(height: 100,),
-                  Image.asset('assets/images/logo.png',
-                  width: 200,
-                    height: 200,
+                  Image.asset('assets/images/Signin.png',
+                  width: double.infinity,
                     fit: BoxFit.cover,
                   ),
-                  const SizedBox(height: 20,),
                   Text("Welcome Back!",style: currentTheme.textTheme.titleLarge,),
                   const SizedBox(height: 20,),
                   TextFormField(
                     controller: userNameController,
                     validator: Validators.validateUserName,
-                    decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person),
+                    decoration: InputDecoration(
+                        hintText: 'Username',
+                        prefixIcon: Icon(Icons.person,
+                        color: textIconColor,
+                        ),
+                        filled: true,
+                        fillColor: textFillColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
-                        )
+                          borderSide: BorderSide.none
+                        ),
                     ),
+                    style: textFieldStyle,
                   ),
-                  const SizedBox(height: 20,),
+                  const SizedBox(height: 10,),
                   TextFormField(
                     controller: passwordController,
                     validator: Validators.validatePassword,
                     obscureText: !isPasswordVisible,
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.password,),
+                      filled: true,
+                        fillColor: textFillColor,
+                        prefixIcon: Icon(Icons.password,
+                        color: textIconColor,
+                        ),
                         suffixIcon: IconButton(
-                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,
+                          color: textIconColor,
+                          ),
                           onPressed: ()
                           {
                             setState((){
@@ -91,18 +144,19 @@ class _LoginState extends State<Login> {
                             });
               
                           },),
-                        labelText: 'Password',
+                        hintText: 'Password',
                         border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
+                          borderSide: BorderSide.none
                         )
                     ),
+                    style: textFieldStyle,
                   ),
-                  const SizedBox(height: 30,),
+                  const SizedBox(height: 20,),
                   ElevatedButton(
                     onPressed: ()  {
-                      if(formKey.currentState!.validate()){
                         login();
-                      }
+                        FocusScope.of(context).unfocus();
                     },
                     child: Text('Login',
                       style: TextStyle(
@@ -112,15 +166,27 @@ class _LoginState extends State<Login> {
               
                   ),
                   TextButton(
-                      onPressed: () async {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignUp()),);
-                      },
-                      child: Text("Don't have an Account? SignUp",
-                        style: currentTheme.textTheme.bodyMedium?.
-                        copyWith(
-                          color: currentTheme.primaryColor,
-                        ),
-                      )),
+                    onPressed: () async {
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignUp()),);
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "Don't have an Account? ",
+                            style: currentTheme.textTheme.bodyMedium
+                          ),
+                          TextSpan(
+                            text: "SignUp",
+                            style: currentTheme.textTheme.bodyMedium?.copyWith(
+                              color: currentTheme.primaryColor,
+                              fontWeight: FontWeight.bold, // added bold weight
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 ],
               ),
             ) ),
@@ -145,7 +211,6 @@ class _SignUpState extends State<SignUp>{
   final formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController userNameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
@@ -155,7 +220,6 @@ class _SignUpState extends State<SignUp>{
     var res = await db.createUser(
         Users(
             fullName: nameController.text,
-            email: emailController.text,
             usrName: userNameController.text,
             password: passwordController.text)
     );
@@ -168,9 +232,23 @@ class _SignUpState extends State<SignUp>{
   @override
   Widget build(BuildContext context) {
     final currentTheme = Theme.of(context);
+    final textFillColor = Theme.of(context).brightness == Brightness.dark
+        ? Color(0xFF2B2B2B) // Dark theme fill color of text field
+        : Colors.blue.shade50; // Light theme fill color of text field
+    final textIconColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey.shade400 // Dark theme icon color of text field
+        : Colors.grey.shade800; // Light theme icon color of text field
+    final textFieldStyle = TextStyle(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.white // Dark theme text color of text field
+          : Colors.black, // Light theme text color of text field
+    );
+
+
 
 
     return Scaffold(
+      backgroundColor: currentTheme.brightness == Brightness.dark ? Colors.black : Colors.white,
       appBar: null,
       body: Center(
         child: Padding(padding: EdgeInsets.all(16.0),
@@ -179,60 +257,61 @@ class _SignUpState extends State<SignUp>{
             child:SingleChildScrollView(
               child: Column(
                 children: [
-                  SizedBox(height: 50,),
-                  Image.asset('assets/images/logo.png',
-                  width: 200,
-                  height: 200,
+                  Image.asset('assets/images/Signup.png',
+                  width: double.infinity,
                   fit: BoxFit.cover,
                   ),
-                  const SizedBox(height: 20,),
-                  Text('Register Create your Account',style: currentTheme.textTheme.titleLarge,),
+                  Text('Create your Account',style: currentTheme.textTheme.titleLarge,),
                   const SizedBox(height: 20,),
                   TextFormField(
                     controller: nameController,
                     validator: Validators.validateName,
-                    decoration: const InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(
+                    decoration: InputDecoration(
+                        hintText: 'Full Name',
+                        prefixIcon: Icon(Icons.person,
+                        color: textIconColor,
+                        ),
+                        filled: true,
+                        fillColor: textFillColor,
+                        border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
+                          borderSide: BorderSide.none
                         )
                     ),
+                    style: textFieldStyle,
                   ),
-                  const SizedBox(height: 20,),
+                  const SizedBox(height: 10,),
                   TextFormField(
                     controller: userNameController,
                     validator: Validators.validateName,
-                    decoration: const InputDecoration(
-                        labelText: 'username',
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(
+                    decoration: InputDecoration(
+                        hintText: 'Username',
+                        prefixIcon: Icon(Icons.person,
+                        color: textIconColor,
+                        ),
+                        filled: true,
+                        fillColor: textFillColor,
+                        border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
+                          borderSide: BorderSide.none
                         )
                     ),
+                    style: textFieldStyle,
                   ),
-                  const SizedBox(height: 20,),
-                  TextFormField(
-                    controller: emailController,
-                    validator: Validators.validateEmail,
-                    decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                        )
-                    ),
-                  ),
-                  const SizedBox(height: 20,),
+                  const SizedBox(height: 10,),
                   TextFormField(
                     controller: passwordController,
                     validator: Validators.validatePassword,
                     obscureText: !isPasswordVisible,
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.password,),
+                        prefixIcon: Icon(Icons.password,
+                        color: textIconColor,
+                        ),
                         suffixIcon: IconButton(
-                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off),
+                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,
+                          color: textIconColor,
+                          ),
                           onPressed: ()
                           {
                             setState((){
@@ -240,23 +319,30 @@ class _SignUpState extends State<SignUp>{
                             });
               
                           },),
-                        labelText: 'Password',
-                        //prefixIcon: Icon(Icons.remove_red_eye_sharp),
+                        hintText: 'Password',
+                        filled: true,
+                        fillColor: textFillColor,
                         border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
+                          borderSide: BorderSide.none
                         )
                     ),
+                    style: textFieldStyle,
                   ),
-                  const SizedBox(height: 20,),
+                  const SizedBox(height: 10,),
                   TextFormField(
                     controller: confirmPasswordController,
                     validator: (value) => Validators.validateConfirmPassword(value, passwordController.text),
                     obscureText: !isConfirmPasswordVisible,
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.password,),
+                        prefixIcon: Icon(Icons.password,
+                        color: textIconColor,
+                        ),
                         suffixIcon: IconButton(
-                          icon: Icon(isConfirmPasswordVisible ? Icons.visibility:Icons.visibility_off),
+                          icon: Icon(isConfirmPasswordVisible ? Icons.visibility:Icons.visibility_off,
+                          color: textIconColor,
+                          ),
                           onPressed: ()
                           {
                             setState((){
@@ -264,20 +350,22 @@ class _SignUpState extends State<SignUp>{
                             });
               
                           },),
-                        labelText: 'Confirm Password',
+                        hintText: 'Confirm Password',
+                        filled: true,
+                        fillColor: textFillColor,
                         border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
+                          borderSide: BorderSide.none
                         )
                     ),
+                    style: textFieldStyle,
                   ),
-                  const SizedBox(height: 30,),
+                  const SizedBox(height: 20,),
                   ElevatedButton(
                     onPressed: ()  {
                       if(formKey.currentState!.validate()){
                         signUp();
                       }
-
-                      //Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> const Login()));
                     },
                     child: Text('Sign Up',
                       style: TextStyle(
@@ -288,15 +376,27 @@ class _SignUpState extends State<SignUp>{
               
                   ),
                   TextButton(
-                      onPressed: () async {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Login()),);
-                      },
-                      child: Text("Already have an Account? Login",
-                        style: currentTheme.textTheme.bodyMedium?.
-                        copyWith(
-                          color: currentTheme.primaryColor,
-                        ),
-                      ))
+                    onPressed: () async {
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Login()),);
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                              text: "Already have an Account? ",
+                              style: currentTheme.textTheme.bodyMedium
+                          ),
+                          TextSpan(
+                            text: "Login",
+                            style: currentTheme.textTheme.bodyMedium?.copyWith(
+                              color: currentTheme.primaryColor,
+                              fontWeight: FontWeight.bold, // added bold weight
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 ],
               ),
             ) ),

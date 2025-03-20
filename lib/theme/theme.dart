@@ -5,6 +5,9 @@ ThemeData lightMode =ThemeData(
     brightness: Brightness.light,
     primaryColor: Colors.blue,
     appBarTheme: const AppBarTheme(
+      titleTextStyle: TextStyle(
+        fontSize: 24,
+      ),
       backgroundColor: Colors.blue,
       foregroundColor: Colors.white,
     ),
@@ -83,6 +86,9 @@ ThemeData darkMode =ThemeData(
     brightness: Brightness.dark,
     primaryColor: const Color(0xFF2F4F7F), //
     appBarTheme: const AppBarTheme(
+      titleTextStyle: TextStyle(
+        fontSize: 24,
+      ),
       backgroundColor:  Color(0xFF2F4F7F),
       foregroundColor: Colors.white,
       elevation: 4,

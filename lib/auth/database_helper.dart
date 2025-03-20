@@ -21,11 +21,14 @@ class DatabaseHelper{
 
   String favorites = '''
     CREATE TABLE favorites (
-      id TEXT PRIMARY KEY,
+      id TEXT,
+      usrId INTEGER,
       title TEXT,
       authors TEXT,
       thumbnail TEXT,
-      description TEXT
+      description TEXT,
+      PRIMARY KEY (id, usrId),
+      FOREIGN KEY (usrId) REFERENCES users(usrId)
     )
   ''';
 
@@ -68,21 +71,29 @@ class DatabaseHelper{
   }
 
   // Insert a book into favorites
-  Future<int> insertFavorite(Book book) async {
+  Future<int> insertFavorite(Book book, int usrId) async {
     final Database db = await initDB();
-    return db.insert("favorites", book.toMap());
+    return db.insert("favorites", {
+      ...book.toMap(),
+      "usrId": usrId,
+    });
   }
 
   // Remove a book from favorites by its id
-  Future<int> removeFavorite(String id) async {
+  Future<int> removeFavorite(String id, int usrId) async {
     final Database db = await initDB();
-    return db.delete("favorites", where: "id = ?", whereArgs: [id]);
+    return db.delete("favorites", where: "id = ? AND usrId = ?", whereArgs: [id, usrId],
+    );
   }
 
   // Retrieve all favorite books
-  Future<List<Book>> getFavorites() async {
+  Future<List<Book>> getFavorites(int usrId) async {
     final Database db = await initDB();
-    final List<Map<String, dynamic>> maps = await db.query("favorites");
+    final List<Map<String, dynamic>> maps = await db.query(
+      "favorites",
+      where: "usrId = ?",
+      whereArgs: [usrId],
+    );
 
     return List.generate(maps.length, (i) {
       return Book(

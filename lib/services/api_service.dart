@@ -7,7 +7,7 @@ class ApiService {
 
   // Fetch books from the API using a search query.
   Future<List<Book>> fetchBooks(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl?q=$query'));
+    final response = await http.get(Uri.parse('$baseUrl?q=$query&maxResults=40'));  //  api fetches 40 results.
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
       final List<dynamic> items = data['items'] ?? [];
